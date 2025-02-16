@@ -171,7 +171,7 @@ if not forecast_results.empty:
     VALUES (?, ?, ?, ?, ?)
     """
     for idx, row in forecast_results.iterrows():
-        cursor.execute(insert_query, row['ForecastDate'].date(), float(row['ForecastRemainingQty']),
+        cursor.execute(insert_query, row['ForecastDate'].to_pydatetime(), float(row['ForecastRemainingQty']),
                        row['PartNum'], row['RevisionNum'], row['MtlPartNum'])
     conn.commit()
     print("Forecast results successfully written to SQL Server.")
