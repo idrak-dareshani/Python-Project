@@ -1,4 +1,4 @@
-;WITH
+WITH
     DemandMaster(JobNum, PartNum, RevisionNum, ReqDueDate, RemainingQty, MtlSeq, MtlPartNum, ReqDate, PromiseDt, RequiredQty, OnHandQty, RelQty)
     AS
     (
