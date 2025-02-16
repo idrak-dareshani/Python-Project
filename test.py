@@ -6,10 +6,10 @@ from prophet import Prophet
 # Connect to the database
 conn_str = (
     "DRIVER={SQL Server};"
-    "SERVER=74.208.238.27;"
-    "DATABASE=Epicor10;"
-    "UID=idareshani;"
-    "PWD=Mandarin_2190;"
+    "SERVER=xxxxxxx;"
+    "DATABASE=xxxxxxx;"
+    "UID=xxxxxxx;"
+    "PWD=xxxxxxx;"
     "TrustServerCertificate=yes;"
 )
 conn = pyodbc.connect(conn_str)
