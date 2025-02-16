@@ -1,18 +1,9 @@
+import conkey
 import pyodbc
 import pandas as pd
-#import datetime
-from prophet import Prophet
 
 # Connect to the database
-conn_str = (
-    "DRIVER={SQL Server};"
-    "SERVER=xxxxxxx;"
-    "DATABASE=xxxxxxx;"
-    "UID=xxxxxxx;"
-    "PWD=xxxxxxx;"
-    "TrustServerCertificate=yes;"
-)
-conn = pyodbc.connect(conn_str)
+conn = pyodbc.connect(conkey.conn_str)
 
 # Query the database
 query = """
@@ -80,6 +71,8 @@ print(df.head())
 
 # Preprocess the data
 df['ReqDueDate'] = pd.to_datetime(df['ReqDueDate'])
+
+from prophet import Prophet
 
 # Forecasting period
 forecast_periods = 12
