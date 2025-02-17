@@ -1,6 +1,7 @@
 import conkey
 import pyodbc
 import pandas as pd
+from prophet import Prophet
 
 # Connect to the database
 conn = pyodbc.connect(conkey.conn_str)
@@ -69,10 +70,11 @@ df = pd.read_sql(query, conn)
 print("Extracted Data:")
 print(df.head())
 
+# Close connection
+conn.close()
+
 # Preprocess the data
 df['ReqDueDate'] = pd.to_datetime(df['ReqDueDate'])
-
-from prophet import Prophet
 
 # Forecasting period
 forecast_periods = 12
@@ -114,11 +116,11 @@ for group_keys, group_df in grouped:
     future = model.make_future_dataframe(periods=forecast_periods, freq=forecast_freq)
     forecast = model.predict(future)
 
-    # # Optionally, plot the forecast
-    # import matplotlib.pyplot as plt
-    # fig = model.plot(forecast)
-    # plt.title(f"Forecast for PartNum {part_num} Revision {revision_num} MtlPartNum {mtl_part_num}")
-    # plt.show()
+    # Optionally, plot the forecast
+    import matplotlib.pyplot as plt
+    fig = model.plot(forecast)
+    plt.title(f"Forecast for PartNum {part_num} Revision {revision_num} MtlPartNum {mtl_part_num}")
+    plt.show()
 
     # Extract the forecasted values
     forecast_future = forecast[['ds', 'yhat']].tail(forecast_periods)
@@ -136,41 +138,7 @@ if all_forecasts:
     forecast_results = pd.concat(all_forecasts, ignore_index=True)
     print("\nCombined Forecast Results:")
     print(forecast_results.head())
+    #forecast_results.to_csv('forecast_result.csv', index=False)
 else:
     print("No forecasts were generated.")
-    forecast_results = pd.DataFrame()
-
-if not forecast_results.empty:
-    cursor = conn.cursor()
-
-    # Create a table for forecasts if it does not exist
-    create_table_query = """
-    IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='DemandForecasts' and xtype='U')
-    CREATE TABLE DemandForecasts (
-        ForecastDate DATE,
-        ForecastRemainingQty FLOAT,
-        PartNum VARCHAR(50),
-        RevisionNum VARCHAR(50),
-        MtlPartNum VARCHAR(50),
-        AsOfDate DATETIME DEFAULT GETDATE()
-    )
-    """
-    cursor.execute(create_table_query)
-    conn.commit()
-
-    # Insert forecast records into SQL Server
-    insert_query = """
-    INSERT INTO DemandForecasts (ForecastDate, ForecastRemainingQty, PartNum, RevisionNum, MtlPartNum)
-    VALUES (?, ?, ?, ?, ?)
-    """
-    for idx, row in forecast_results.iterrows():
-        cursor.execute(insert_query, row['ForecastDate'].to_pydatetime(), float(row['ForecastRemainingQty']),
-                       row['PartNum'], row['RevisionNum'], row['MtlPartNum'])
-    conn.commit()
-    print("Forecast results successfully written to SQL Server.")
-
-    # Close the cursor
-    cursor.close()
-
-# Close the connection
-conn.close()
+    #forecast_results = pd.DataFrame()
