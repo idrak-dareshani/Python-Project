@@ -35,9 +35,9 @@ WITH JobData AS (
     WHERE 
         jh.JobType = 'MFG'
         AND jh.JobReleased = 1 
-        AND JobHeld = 0
-        AND (jh.ProdQty - jh.QtyCompleted) > 0
-        AND (jm.RequiredQty - jm.IssuedQty - jm.ShippedQty) > 0
+        AND jh.JobHeld = 0
+        --AND (jh.ProdQty - jh.QtyCompleted) > 0
+        --AND (jm.RequiredQty - jm.IssuedQty - jm.ShippedQty) > 0
         -- Include historical data
         --AND jh.ReqDueDate >= DATEADD(YEAR, -5, GETDATE()) -- Fetch last 5 years of data
     GROUP BY 
@@ -117,10 +117,10 @@ for group_keys, group_df in grouped:
     forecast = model.predict(future)
 
     # Optionally, plot the forecast
-    import matplotlib.pyplot as plt
-    fig = model.plot(forecast)
-    plt.title(f"Forecast for PartNum {part_num} Revision {revision_num} MtlPartNum {mtl_part_num}")
-    plt.show()
+    # import matplotlib.pyplot as plt
+    # fig = model.plot(forecast)
+    # plt.title(f"Forecast for PartNum {part_num} Revision {revision_num} MtlPartNum {mtl_part_num}")
+    # plt.show()
 
     # Extract the forecasted values
     forecast_future = forecast[['ds', 'yhat']].tail(forecast_periods)
@@ -138,7 +138,7 @@ if all_forecasts:
     forecast_results = pd.concat(all_forecasts, ignore_index=True)
     print("\nCombined Forecast Results:")
     print(forecast_results.head())
-    #forecast_results.to_csv('forecast_result.csv', index=False)
+    forecast_results.to_csv('forecast_result.csv', index=False)
 else:
     print("No forecasts were generated.")
     #forecast_results = pd.DataFrame()
