@@ -15,5 +15,7 @@
 3. If not found then store the list of components which needs to be ordered
 
 <b>Enhancement:</b></br>
-Create purchase orders for components which are not found in any source also decide which supplier is suitable considering quality and delivery time.
+- Add cost to the process to determine purchasing targets
+- Create purchase orders for components which are not found in any source also decide which supplier is suitable considering quality and delivery time.
+- Create visualization to show the trends
 
