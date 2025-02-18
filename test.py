@@ -1,9 +1,8 @@
-import conkey
 import pandas as pd
 from prophet import Prophet
 
 df = pd.read_csv('forecast_demand.csv', parse_dates=['ReqDueDate'])
-print("Loaded Data:")
+print("Loaded Demand Data:")
 print(df.head())
 
 # Preprocess the data
@@ -35,7 +34,7 @@ for group_keys, group_df in grouped:
     prophet_df = ts.rename(columns={'ReqDueDate': 'ds', 'TotalRemainingQty': 'y'})
 
     if (len(prophet_df) < 10):
-        #print(f"Skipping group due to insufficient data points: {len(prophet_df)}")
+        print(f"Skipping group due to insufficient data points: {len(prophet_df)}")
         continue
 
     model = Prophet(daily_seasonality=False, weekly_seasonality=True)
