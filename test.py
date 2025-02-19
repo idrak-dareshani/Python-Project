@@ -67,4 +67,3 @@ if all_forecasts:
     forecast_results.to_csv('forecast_result.csv', index=False)
 else:
     print("No forecasts were generated.")
-    #forecast_results = pd.DataFrame()
