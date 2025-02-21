@@ -1,32 +1,33 @@
-
-    SELECT TOP(100)
-        jh.JobNum, 
-        jh.PartNum, 
-        jh.RevisionNum, 
-        jh.ReqDueDate, 
-        (jh.ProdQty - jh.QtyCompleted) AS RemainingQty, 
-        jm.MtlSeq, 
-        jm.PartNum AS MtlPartNum,
-        jm.EstUnitCost,
-        COALESCE(jm.ReqDate, jh.ReqDueDate) AS ReqDate, 
-        COALESCE(pr.PromiseDt, DATEADD(DAY, -2, COALESCE(jm.ReqDate, jh.ReqDueDate))) AS PromiseDt,
-        (jm.RequiredQty - jm.IssuedQty - jm.ShippedQty) AS RequiredQty, 
-        COALESCE(SUM(pq.OnHandQty), 0) AS OnHandQty, 
-        COALESCE(pr.RelQty, 0) AS RelQty
-    FROM 
-        erp.JobHead AS jh
-        INNER JOIN erp.JobMtl jm 
-            ON jm.Company = jh.Company AND jm.JobNum = jh.JobNum
-        LEFT JOIN erp.PartQty pq 
-            ON pq.Company = jh.Company AND pq.PartNum = jm.PartNum
-        LEFT JOIN erp.PODetail pd 
-            ON pd.Company = jh.Company AND pd.PartNum = jm.PartNum AND pd.OpenLine = 1
-        LEFT JOIN erp.PORel pr 
-            ON pr.Company = pd.Company AND pr.PONum = pd.PONum AND pr.POLine = pd.POLine AND pr.OpenRelease = 1
-    WHERE 
-        jh.JobType = 'MFG'
-        AND jh.JobComplete = 1 
-        AND jh.JobClosed = 1
-    GROUP BY 
-        jh.JobNum, jh.PartNum, jh.RevisionNum, jh.ReqDueDate, jh.ProdQty, jh.QtyCompleted, 
-        jm.MtlSeq, jm.PartNum, jm.EstUnitCost, jm.ReqDate, jm.RequiredQty, jm.IssuedQty, jm.ShippedQty, pr.PromiseDt, pr.RelQty
+WITH JobData AS (
+    SELECT 
+        j.JobNum,
+        jm.PartNum AS ProductID,
+        j.CreateDate AS OrderDate,
+        j.JobCompletionDate,
+        CASE 
+            WHEN j.JobCompletionDate IS NULL THEN 'Open' 
+            ELSE 'Closed' 
+        END AS JobStatus,
+        j.ProdQty AS QuantityOrdered,
+        j.QtyCompleted,
+        DATEDIFF(DAY, j.CreateDate, ISNULL(j.JobCompletionDate, GETDATE())) AS LeadTime,
+        jm.EstUnitCost AS UnitCost
+    FROM erp.JobHead j
+    INNER JOIN erp.JobMtl jm ON j.JobNum = jm.JobNum
+    WHERE j.JobType = 'MFG' 
+    --    AND j.CreateDate >= DATEADD(YEAR, -3, GETDATE())  -- Last 3 years
+)
+SELECT ProductID, Year, Month, SUM(TotalDemand) AS Demand, AVG(AvgUnitCost) AS UnitCost
+FROM (SELECT 
+    ProductID,
+    JobStatus,
+    YEAR(OrderDate) AS Year,
+    MONTH(OrderDate) AS Month,
+    SUM(QuantityOrdered) AS TotalDemand,
+    AVG(LeadTime) AS AvgLeadTime,
+    AVG(UnitCost) AS AvgUnitCost  -- Average unit cost per product
+FROM JobData
+GROUP BY ProductID, JobStatus, YEAR(OrderDate), MONTH(OrderDate)) DemandTable
+GROUP BY ProductID, Year, Month
+ORDER BY ProductID, Year DESC, Month DESC;
+;

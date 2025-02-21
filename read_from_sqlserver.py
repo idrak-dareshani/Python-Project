@@ -16,6 +16,7 @@ WITH JobData AS (
         (jh.ProdQty - jh.QtyCompleted) AS RemainingQty, 
         jm.MtlSeq, 
         jm.PartNum AS MtlPartNum,
+        jm.EstUnitCost,
         COALESCE(jm.ReqDate, jh.ReqDueDate) AS ReqDate, 
         COALESCE(pr.PromiseDt, DATEADD(DAY, -2, COALESCE(jm.ReqDate, jh.ReqDueDate))) AS PromiseDt,
         (jm.RequiredQty - jm.IssuedQty - jm.ShippedQty) AS RequiredQty, 
@@ -33,34 +34,28 @@ WITH JobData AS (
             ON pr.Company = pd.Company AND pr.PONum = pd.PONum AND pr.POLine = pd.POLine AND pr.OpenRelease = 1
     WHERE 
         jh.JobType = 'MFG'
-        AND jh.JobComplete = 1 
-        AND jh.JobClosed = 1
-        --AND (jh.ProdQty - jh.QtyCompleted) > 0
-        --AND (jm.RequiredQty - jm.IssuedQty - jm.ShippedQty) > 0
-        -- Include historical data
-        --AND jh.ReqDueDate >= DATEADD(YEAR, -5, GETDATE()) -- Fetch last 5 years of data
+        AND jh.JobReleased = 1 
+        AND jh.ProdQty > 0
     GROUP BY 
         jh.JobNum, jh.PartNum, jh.RevisionNum, jh.ReqDueDate, jh.ProdQty, jh.QtyCompleted, 
-        jm.MtlSeq, jm.PartNum, jm.ReqDate, jm.RequiredQty, jm.IssuedQty, jm.ShippedQty, pr.PromiseDt, pr.RelQty
+        jm.MtlSeq, jm.PartNum, jm.EstUnitCost, jm.ReqDate, jm.RequiredQty, jm.IssuedQty, jm.ShippedQty, 
+        pr.PromiseDt, pr.RelQty
 )
 SELECT 
     PartNum, 
     RevisionNum, 
     MtlPartNum, 
-    ReqDueDate, 
+    EstUnitCost, 
+    ReqDueDate,
     SUM(RemainingQty) AS TotalRemainingQty, 
     SUM(RequiredQty) AS TotalRequiredQty, 
     SUM(OnHandQty) AS TotalOnHandQty, 
     SUM(RelQty) AS TotalRelQty,
-    
-    -- Additional computed columns
     DATEDIFF(DAY, MIN(ReqDueDate), MAX(ReqDueDate)) AS DemandLeadTime
-    --AVG(RemainingQty) OVER (PARTITION BY PartNum ORDER BY ReqDueDate ROWS BETWEEN 6 PRECEDING AND CURRENT ROW) AS MovingAvg_7Days,
-    --SUM(RemainingQty) OVER (PARTITION BY PartNum ORDER BY ReqDueDate ROWS BETWEEN 29 PRECEDING AND CURRENT ROW) AS MovingSum_30Days
 FROM 
     JobData
 GROUP BY 
-    PartNum, RevisionNum, MtlPartNum, ReqDueDate
+    PartNum, RevisionNum, MtlPartNum, EstUnitCost, ReqDueDate
 ORDER BY 
     ReqDueDate;
 """
