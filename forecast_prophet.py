@@ -1,8 +1,8 @@
 import conkey
 import pandas as pd
 import numpy as np
-from sqlalchemy import create_engine
 from prophet import Prophet
+from sqlalchemy import create_engine
 
 # Create engine - getting connection string from conkey
 engine = create_engine(conkey.conn_str)
