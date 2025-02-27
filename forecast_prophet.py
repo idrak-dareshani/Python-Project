@@ -45,8 +45,17 @@ ORDER BY ProductID, Year DESC, Month DESC;
 # Fetch data into Pandas DataFrame
 df = pd.read_sql(query, engine)
 
+if df.empty:
+    raise ValueError("No data returned from SQL query.")
+
+if df['Demand'].isnull().all():
+    raise ValueError("All demand values are NaN.")
+
 # Convert Year and Month into a datetime format
-df['Date'] = pd.to_datetime(df[['Year', 'Month']].assign(DAY=1))
+df['Date'] = pd.to_datetime(df[['Year', 'Month']].assign(DAY=1), errors='coerce')
+
+if df['Date'].isnull().any():
+    raise ValueError("Date conversion failed.")
 
 # Get unique product IDs
 product_ids = df['ProductID'].unique()
@@ -61,7 +70,7 @@ for product_id in product_ids:
     if product_df.shape[0] < 10:
         print(f"Not enough data for product {product_id}, skipping forecast.")
         continue
-    
+
     # Rename columns for Prophet compatibility
     product_df = product_df.rename(columns={'Date': 'ds', 'Demand': 'y'})
     
@@ -82,6 +91,12 @@ for product_id in product_ids:
 # Combine all forecast results into a single DataFrame
 forecast_df = pd.concat(forecast_results)
 forecast_df.rename(columns={'ds': 'ForecastDate', 'yhat': 'PredictedDemand', 'yhat_lower': 'LowerBound', 'yhat_upper': 'UpperBound'}, inplace=True)
+
+# # Save forecast results to SQL Server
+# table_name = 'DemandForecast'
+# forecast_df.to_sql(table_name, engine, if_exists='replace', index=False)
+
+# print(f"Forecast data successfully saved to table {table_name}.")
 
 # Save forecast resutls to csv
 forecast_df.to_csv('demand_forecast.csv', index = False)
