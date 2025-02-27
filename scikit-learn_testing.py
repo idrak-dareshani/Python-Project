@@ -53,4 +53,6 @@ loaded_model = joblib.load('forecast_model.pkl')
 
 # Predict demand
 predicted_demand = loaded_model.predict(df)
-print(predicted_demand)
+
+# Save predictions to a CSV file
+predicted_demand.to_csv('predicted_demand.csv', index=False)
